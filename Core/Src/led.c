@@ -12,6 +12,7 @@ void ledbar2_toggle(void);
 void led_main(void);
 
 extern char button0_count;
+extern volatile int TIM3_10ms_counter;
 
 // one button처리 BUTTON0
 // 1: led_all_on
@@ -96,33 +97,71 @@ void led2_toggle(void)
 }
 // 0 -> 1..... ->7
 void led_on_up(){
-	for(int i=0; i<8;i++){
+	static uint8_t i = 0;
+	if(TIM3_10ms_counter>=20){
+		TIM3_10ms_counter = 0;
+		if(i==0){
+			HAL_GPIO_WritePin(GPIOB, 0xff, 0);
+		}
 		led_all_off();
-		HAL_GPIO_WritePin(GPIOB, 0x01 << i, 1);
-		my_delay_ms(200);
+		HAL_GPIO_WritePin(GPIOB, 0x01 << i++, 1);
+		i%=8;
 	}
+
+//	for(int i=0; i<8;i++){
+//		led_all_off();
+//		HAL_GPIO_WritePin(GPIOB, 0x01 << i, 1);
+//		my_delay_ms(200);
+//	}
 }
 
 // 7->6->5...->0
 void led_on_down(){
-	for(int i=0; i<8;i++){
+	static uint8_t i = 0;
+	if(TIM3_10ms_counter>=20){
+		TIM3_10ms_counter = 0;
+		if(i==0){
+			HAL_GPIO_WritePin(GPIOB, 0xff, 0);
+		}
 		led_all_off();
-		HAL_GPIO_WritePin(GPIOB, 0x80 >> i, 1);
-		my_delay_ms(200);
+		HAL_GPIO_WritePin(GPIOB, 0x80 >> i++, 1);
+		i %= 8;
 	}
+//	for(int i=0; i<8;i++){
+//		led_all_off();
+//		HAL_GPIO_WritePin(GPIOB, 0x80 >> i, 1);
+//		my_delay_ms(200);
+//	}
 }
 
 // 0->1->....->7 기존 on된 것 끄지말고 유지하기
 void led_keppon_up(){
+	static uint8_t i = 0;
+
 	uint16_t pattern = 0x01;
-	led_all_off();
-	my_delay_ms(100);
-	for(int i=0; i<8;i++){
-		HAL_GPIO_WritePin(GPIOB, pattern, 1);
-		my_delay_ms(200);
-		pattern = pattern << 1 | 0x01;
+	while(i<8){
+		if(TIM3_10ms_counter>=20){
+			TIM3_10ms_counter = 0;
+			if(i==0){
+				HAL_GPIO_WritePin(GPIOB, 0xff, 0);
+			}
+			led_all_off();
+			HAL_GPIO_WritePin(GPIOB, pattern, 1);
+			pattern = pattern << 1 | 0x01;
+			i++;
+			i%=8;
+		}
 	}
 }
+//	uint16_t pattern = 0x01;
+//	led_all_off();
+//	my_delay_ms(100);
+//	for(int i=0; i<8;i++){
+//		HAL_GPIO_WritePin(GPIOB, pattern, 1);
+//		my_delay_ms(200);
+//		pattern = pattern << 1 | 0x01;
+//	}
+
 // 7->6->5->....->0 기존 off된 것 끄지말고 유지하기
 void led_keepon_down(){
 	uint16_t pattern = 0x80;
