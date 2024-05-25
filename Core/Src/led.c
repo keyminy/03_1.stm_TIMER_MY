@@ -12,7 +12,7 @@ void ledbar2_toggle(void);
 void led_main(void);
 
 extern char button0_count;
-extern int TIM3_10ms_counter;
+extern volatile int TIM3_10ms_counter;
 
 // one button처리 BUTTON0
 // 1: led_all_on
