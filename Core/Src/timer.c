@@ -26,7 +26,7 @@ void delay_us(unsigned int us)
 void my_delay_ms(unsigned int ms){
 	if(ms < 10){
 		__HAL_TIM_SET_COUNTER(&htim3,0);
-		while (__HAL_TIM_GET_COUNTER(&htim3) < ms)
+		while (__HAL_TIM_GET_COUNTER(&htim3) < ms*10)
 			;        // NOP
 	}else{
 		unsigned int one_ms = ms/10;

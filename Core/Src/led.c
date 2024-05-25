@@ -12,7 +12,7 @@ void ledbar2_toggle(void);
 void led_main(void);
 
 extern char button0_count;
-extern volatile int TIM3_10ms_counter;
+extern int TIM3_10ms_counter;
 
 // one button처리 BUTTON0
 // 1: led_all_on
@@ -136,59 +136,68 @@ void led_on_down(){
 
 // 0->1->....->7 기존 on된 것 끄지말고 유지하기
 void led_keppon_up(){
-	static uint8_t i = 0;
+   uint16_t pattern = 0x01;
+   static uint8_t i=0;
 
-	uint16_t pattern = 0x01;
-	while(i<8){
-		if(TIM3_10ms_counter>=20){
-			TIM3_10ms_counter = 0;
-			if(i==0){
-				HAL_GPIO_WritePin(GPIOB, 0xff, 0);
-			}
-			led_all_off();
-			HAL_GPIO_WritePin(GPIOB, pattern, 1);
-			pattern = pattern << 1 | 0x01;
-			i++;
-			i%=8;
-		}
-	}
-}
-//	uint16_t pattern = 0x01;
-//	led_all_off();
-//	my_delay_ms(100);
-//	for(int i=0; i<8;i++){
-//		HAL_GPIO_WritePin(GPIOB, pattern, 1);
-//		my_delay_ms(200);
-//		pattern = pattern << 1 | 0x01;
-//	}
-
-// 7->6->5->....->0 기존 off된 것 끄지말고 유지하기
-void led_keepon_down(){
-	uint16_t pattern = 0x80;
-	led_all_on();
-	my_delay_ms(100);
-	for(int i=0; i<8;i++){
-		// GPIO_PIN_SET : if it's set to 0, the pin is not affected.
-		// 	HAL_GPIO_WritePin(GPIOB, pattern, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOB, pattern>>i, GPIO_PIN_RESET);
-		my_delay_ms(200);
-	}
+   if(TIM3_10ms_counter >= 20){
+      TIM3_10ms_counter = 0;
+      if(i == 0){
+         led_all_off();
+      }
+      while(TIM3_10ms_counter<=10); // 100ms delay
+      HAL_GPIO_WritePin(GPIOB, pattern<<i++, 1);
+      i%=8;
+   }
 }
 
-void flower_on(){
-	led_all_off();
-	my_delay_ms(100);
-	for(int i=0;i<4;i++){
-		HAL_GPIO_WritePin(GPIOB,(0b00001000 >> i) | (0b00010000 << i), GPIO_PIN_SET);
-		my_delay_ms(200);
-	}
+// 7 -> 6 -> 5 -> .... -> 0 keep other LEDs on
+void led_keepon_down() {
+    static uint16_t pattern = 0x80; // Initial LED pattern
+    static uint8_t i = 0; // Index for current LED
+
+    if (TIM3_10ms_counter >= 20) { // 200ms delay
+        TIM3_10ms_counter = 0;
+        if(i==0){
+            led_all_on();
+        }
+        while(TIM3_10ms_counter<=10); // 100ms delay
+        HAL_GPIO_WritePin(GPIOB, pattern>>i++, GPIO_PIN_RESET);
+        if (i >= 8) {
+            i = 0;
+        }
+    }
 }
 
-void flower_off(){
-	led_all_on();
-	my_delay_ms(100);
-	for(int i=0;i<4;i++){
-		HAL_GPIO_WritePin(GPIOB,(0b10000000 >> i) | (0b00000001 << i), GPIO_PIN_RESET);
-		my_delay_ms(200);
-	}
+void flower_on() {
+    static int i = 0;
+    if (TIM3_10ms_counter >= 20) { // 200ms delay
+        TIM3_10ms_counter = 0;
+    	if(i==0){
+			 led_all_off();
+    	}
+    	while(TIM3_10ms_counter<=10); // 100ms delay
+        HAL_GPIO_WritePin(GPIOB, (0b00001000 >> i) | (0b00010000 << i), GPIO_PIN_SET);
+        i++;
+       if(i==4){
+    	   while(TIM3_10ms_counter<=30); // 300ms delay
+    	   i=0;
+       }
+    }
+}
+
+void flower_off() {
+    static int i = 0;
+    if (TIM3_10ms_counter >= 20) { // 200ms delay
+        TIM3_10ms_counter = 0;
+    	if(i==0){
+    		led_all_on();
+    	}
+    	while(TIM3_10ms_counter<=10); // 100ms delay
+    	 HAL_GPIO_WritePin(GPIOB, (0b10000000 >> i) | (0b00000001 << i), GPIO_PIN_RESET);
+        i++;
+        if(i==4){
+     	   while(TIM3_10ms_counter<=30); // 300ms delay
+     	   i=0;
+        }
+    }
 }
